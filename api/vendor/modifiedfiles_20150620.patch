@@ -1,0 +1,1611 @@
+diff --git a/app/Candidates.php b/app/Candidates.php
+new file mode 100644
+index 0000000..6f548a4
+--- /dev/null
++++ b/app/Candidates.php
+@@ -0,0 +1,27 @@
++<?php namespace App;
++
++use Illuminate\Database\Eloquent\Model;
++
++class Candidates extends Model {
++
++
++    /**
++     * The database table used by the model.
++     *
++     * @var string 
++     */
++    protected $table = 'candidates';
++
++    /**
++     * The attributes that are mass assignable.
++     * @var array 
++     */
++    protected $fillable = [ 'first_name','email','mobile','date_of_birth','gender','SSLC_course','SSLC_percentage','SSLC_year_of_completion','HSC_course','HSC_percentage','HSC_year_of_completion','UG_percentage'];
++    
++    /**
++     * DateTime constructs automatically
++     * @var type 
++     */
++    public $timestamps = false;
++
++}
+diff --git a/app/Http/Controllers/admin/CandidateController.php b/app/Http/Controllers/admin/CandidateController.php
+new file mode 100644
+index 0000000..66a046e
+--- /dev/null
++++ b/app/Http/Controllers/admin/CandidateController.php
+@@ -0,0 +1,73 @@
++<?php namespace App\Http\Controllers\admin;
++
++use App\Http\Requests;
++use App\Http\Controllers\Controller;
++use Illuminate\Http\Request;
++use Redirect;
++class CandidateController extends Controller {
++
++        private $_excelCandidateProperty = [
++            0 => "first_name",
++            1 => "email",
++            2 => "mobile",
++            3 => "date_of_birth",
++            4 => "gender",
++            5 => "SSLC_course",
++            6 => "SSLC_percentage",
++            7 => "SSLC_year_of_completion",
++            8 => "HSC_course",
++            9 => "HSC_percentage",
++            10 => "HSC_year_of_completion",
++            11 => "UG_percentage"
++        ];
++        
++        public function __construct() {
++            $this->middleware('auth');
++        }
++        /**
++         * Display a listing of the resource.
++         *
++         * @return Response
++         */
++        public function index()
++        {
++                $candidateModel = new \App\Candidates;
++                $candidateRecords = $candidateModel->all()->toArray();
++                return view('admin.candidateRegistration')->with('candidate', $candidateRecords);
++        }
++        
++        public function save(Request $request) {
++            $fileName   = $request->file('excel_file')->getClientOriginalName(); 
++            $uploadDir  = public_path() . "\\candidate\\";
++
++            if ($request->file('excel_file')->move($uploadDir, $fileName)) {
++                $excelObject = \Maatwebsite\Excel\Facades\Excel::load($uploadDir . $fileName)->toArray();
++                $insertCount = 0;
++                foreach ($excelObject as $excelColumnIteration => $excelColumnValue) {
++                    $input = [];
++                    foreach ($this->_excelCandidateProperty as $fieldIteration => $field) {
++                        if ($this->_excelCandidateProperty[$fieldIteration] == "first_name") {
++                            $input['first_name'] = $excelColumnValue[$fieldIteration];
++                            $input['last_name'] = "";
++                            if (strpos($excelColumnValue[$fieldIteration], ".") || strpos($excelColumnValue[$fieldIteration], " ")) {
++                                preg_match_all("#(.*)(\s|\.)(.*)#i", $excelColumnValue[$fieldIteration], $matches);
++                                $input['first_name'] = $matches[1][0]; //firstname
++                                $input['last_name'] = $matches[3][0]; //lastname (or) initial
++                            }
++                        }
++                        else {
++                            $input[$this->_excelCandidateProperty[$fieldIteration]] = $excelColumnValue[$fieldIteration];
++                        }
++                    }//row pointer
++                    if (isset($input['first_name']) && isset($input['last_name']) && (isset($input['SSLC_percentage']) || isset($input['HSC_percentage']) || isset($input['UG_percentage']))) {
++                        \Illuminate\Support\Facades\DB::unprepared(sprintf("CALL create_candidates_from_excel ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', %s)", $input['first_name'], $input['last_name'], $input['email'], $input['mobile'], $input['gender'], $input['date_of_birth'], $input['SSLC_course'], $input['SSLC_percentage'], $input['SSLC_year_of_completion'], $input['HSC_course'], $input['HSC_percentage'], $input['HSC_year_of_completion'], $input['UG_percentage'], 'active', 'admin', 'admin', '@insertCount'));
++                        $count = \Illuminate\Support\Facades\DB::select("SELECT @insertCount");
++                        if ($count) {    
++                            $insertCount++;    
++                        }    
++                    }                  
++                }//loop on every row
++                return \Redirect::to('candidate')->with('message', sprintf("%d Candidates found in uploaded file", $insertCount));
++            }
++        }
++}
+diff --git a/app/Http/Controllers/admin/CollegeController.php b/app/Http/Controllers/admin/CollegeController.php
+new file mode 100644
+index 0000000..b074edb
+--- /dev/null
++++ b/app/Http/Controllers/admin/CollegeController.php
+@@ -0,0 +1,27 @@
++<?php namespace App\Http\Controllers\admin;
++
++use App\Http\Requests;
++use App\Http\Controllers\Controller;
++
++use Illuminate\Http\Request;
++
++class CollegeController extends Controller {
++
++    
++        public function __construct() {
++            $this->middleware('auth');
++        }
++	
++        /**
++	 * Display a listing of the resource.
++	 *
++	 * @return Response
++	 */
++	public function index()
++	{
++            $collegeModel = new \App\Institution();
++            $collegeRecords = $collegeModel->all()->toArray();
++		return view('admin.collegeview')->with('college', $collegeRecords);
++	}
++
++}
+diff --git a/app/Http/Middleware/RedirectIfAuthenticated.php b/app/Http/Middleware/RedirectIfAuthenticated.php
+index dd5a867..efbab08 100644
+--- a/app/Http/Middleware/RedirectIfAuthenticated.php
++++ b/app/Http/Middleware/RedirectIfAuthenticated.php
+@@ -35,7 +35,7 @@ class RedirectIfAuthenticated {
+ 	{
+ 		if ($this->auth->check())
+ 		{
+-			return new RedirectResponse(url('/home'));
++			return new RedirectResponse(url('/candidate'));
+ 		}
+ 
+ 		return $next($request);
+diff --git a/app/Http/routes.php b/app/Http/routes.php
+index ffa5c20..a6e4d43 100644
+--- a/app/Http/routes.php
++++ b/app/Http/routes.php
+@@ -13,10 +13,13 @@
+ 
+ Route::get('/', 'CollegeController@index');
+ Route::get("college", ["uses"=>"CollegeController@index"]);
+-Route::post('college/signup', 'CollegeController@signup');
+-/*Route::get('home', 'HomeController@index');
++Route::get("college/view", ["uses" => "admin\CollegeController@index"]);
++Route::post("college/signup", "CollegeController@signup");
++Route::get("candidate", ["uses"=>"admin\CandidateController@index"]);
++Route::post("candidate/save", ["uses"=>"admin\CandidateController@save"]);
++//Route::get('home', 'HomeController@index');
+ 
+ Route::controllers([
+ 	'auth' => 'Auth\AuthController',
+ 	'password' => 'Auth\PasswordController',
+-]);*/
++]);
+diff --git a/app/Institution.php b/app/Institution.php
+new file mode 100644
+index 0000000..447c61f
+--- /dev/null
++++ b/app/Institution.php
+@@ -0,0 +1,25 @@
++<?php namespace App;
++
++use Illuminate\Database\Eloquent\Model;
++
++class Institution extends Model {
++
++/**
++     * The database table used by the model.
++     *
++     * @var string 
++     */
++    protected $table = 'institution';
++
++    /**
++     * The attributes that are mass assignable.
++     * @var array 
++     */
++    protected $fillable = [ ];
++    
++    /**
++     * DateTime constructs automatically
++     * @var type 
++     */
++    public $timestamps = false;
++}
+diff --git a/composer.json b/composer.json
+index e0180ed..b9ed4e0 100644
+--- a/composer.json
++++ b/composer.json
+@@ -6,7 +6,8 @@
+ 	"type": "project",
+ 	"require": {
+ 		"laravel/framework": "5.0.*",
+-                "illuminate/html":"5.0.0"
++                "illuminate/html":"5.0.0",
++                "maatwebsite/excel": "~2.0.0"
+ 	},
+ 	"require-dev": {
+ 		"phpunit/phpunit": "~4.0",
+diff --git a/composer.lock b/composer.lock
+index 26d0e0f..35c1c29 100644
+--- a/composer.lock
++++ b/composer.lock
+@@ -4,7 +4,7 @@
+         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+         "This file is @generated automatically"
+     ],
+-    "hash": "f0955a412252a44737003f196acc1ca0",
++    "hash": "fca4085d84ee6130e4a3975c10d57036",
+     "packages": [
+         {
+             "name": "classpreloader/classpreloader",
+@@ -665,6 +665,73 @@
+             "time": "2015-06-07 21:27:37"
+         },
+         {
++            "name": "maatwebsite/excel",
++            "version": "v2.0.6",
++            "source": {
++                "type": "git",
++                "url": "https://github.com/Maatwebsite/Laravel-Excel.git",
++                "reference": "52bcd0873decff570e965dfc4d7351ff956b700f"
++            },
++            "dist": {
++                "type": "zip",
++                "url": "https://api.github.com/repos/Maatwebsite/Laravel-Excel/zipball/52bcd0873decff570e965dfc4d7351ff956b700f",
++                "reference": "52bcd0873decff570e965dfc4d7351ff956b700f",
++                "shasum": ""
++            },
++            "require": {
++                "illuminate/cache": "~5.0",
++                "illuminate/config": "~5.0",
++                "illuminate/filesystem": "~5.0",
++                "illuminate/support": "~5.0",
++                "nesbot/carbon": "~1.0",
++                "php": ">=5.3.0",
++                "phpoffice/phpexcel": "~1.8.0",
++                "tijsverkoyen/css-to-inline-styles": "~1.5"
++            },
++            "require-dev": {
++                "mockery/mockery": "~0.9",
++                "orchestra/testbench": "~3.0.0",
++                "phpseclib/phpseclib": ">=0.3.7",
++                "phpunit/phpunit": "~4.0"
++            },
++            "suggest": {
++                "illuminate/http": "~5.0",
++                "illuminate/routing": "~5.0",
++                "illuminate/view": "~5.0"
++            },
++            "type": "library",
++            "autoload": {
++                "classmap": [
++                    "src/Maatwebsite/Excel",
++                    "tests/TestCase.php"
++                ],
++                "psr-0": {
++                    "Maatwebsite\\Excel\\": "src/"
++                }
++            },
++            "notification-url": "https://packagist.org/downloads/",
++            "license": [
++                "LGPL"
++            ],
++            "authors": [
++                {
++                    "name": "Maatwebsite.nl",
++                    "email": "patrick@maatwebsite.nl"
++                }
++            ],
++            "description": "An eloquent way of importing and exporting Excel and CSV in Laravel 4 with the power of PHPExcel",
++            "keywords": [
++                "PHPExcel",
++                "batch",
++                "csv",
++                "excel",
++                "export",
++                "import",
++                "laravel"
++            ],
++            "time": "2015-06-04 15:32:17"
++        },
++        {
+             "name": "monolog/monolog",
+             "version": "1.13.1",
+             "source": {
+@@ -874,6 +941,63 @@
+             "time": "2015-05-02 15:40:40"
+         },
+         {
++            "name": "phpoffice/phpexcel",
++            "version": "1.8.1",
++            "source": {
++                "type": "git",
++                "url": "https://github.com/PHPOffice/PHPExcel.git",
++                "reference": "372c7cbb695a6f6f1e62649381aeaa37e7e70b32"
++            },
++            "dist": {
++                "type": "zip",
++                "url": "https://api.github.com/repos/PHPOffice/PHPExcel/zipball/372c7cbb695a6f6f1e62649381aeaa37e7e70b32",
++                "reference": "372c7cbb695a6f6f1e62649381aeaa37e7e70b32",
++                "shasum": ""
++            },
++            "require": {
++                "ext-xml": "*",
++                "ext-xmlwriter": "*",
++                "php": ">=5.2.0"
++            },
++            "type": "library",
++            "autoload": {
++                "psr-0": {
++                    "PHPExcel": "Classes/"
++                }
++            },
++            "notification-url": "https://packagist.org/downloads/",
++            "license": [
++                "LGPL"
++            ],
++            "authors": [
++                {
++                    "name": "Maarten Balliauw",
++                    "homepage": "http://blog.maartenballiauw.be"
++                },
++                {
++                    "name": "Mark Baker"
++                },
++                {
++                    "name": "Franck Lefevre",
++                    "homepage": "http://blog.rootslabs.net"
++                },
++                {
++                    "name": "Erik Tilt"
++                }
++            ],
++            "description": "PHPExcel - OpenXML - Read, Create and Write Spreadsheet documents in PHP - Spreadsheet engine",
++            "homepage": "http://phpexcel.codeplex.com",
++            "keywords": [
++                "OpenXML",
++                "excel",
++                "php",
++                "spreadsheet",
++                "xls",
++                "xlsx"
++            ],
++            "time": "2015-05-01 07:00:55"
++        },
++        {
+             "name": "psr/log",
+             "version": "1.0.0",
+             "source": {
+@@ -1094,6 +1218,59 @@
+             "time": "2015-05-29 14:42:58"
+         },
+         {
++            "name": "symfony/css-selector",
++            "version": "v2.7.1",
++            "source": {
++                "type": "git",
++                "url": "https://github.com/symfony/CssSelector.git",
++                "reference": "0b5c07b516226b7dd32afbbc82fe547a469c5092"
++            },
++            "dist": {
++                "type": "zip",
++                "url": "https://api.github.com/repos/symfony/CssSelector/zipball/0b5c07b516226b7dd32afbbc82fe547a469c5092",
++                "reference": "0b5c07b516226b7dd32afbbc82fe547a469c5092",
++                "shasum": ""
++            },
++            "require": {
++                "php": ">=5.3.9"
++            },
++            "require-dev": {
++                "symfony/phpunit-bridge": "~2.7"
++            },
++            "type": "library",
++            "extra": {
++                "branch-alias": {
++                    "dev-master": "2.7-dev"
++                }
++            },
++            "autoload": {
++                "psr-4": {
++                    "Symfony\\Component\\CssSelector\\": ""
++                }
++            },
++            "notification-url": "https://packagist.org/downloads/",
++            "license": [
++                "MIT"
++            ],
++            "authors": [
++                {
++                    "name": "Jean-François Simon",
++                    "email": "jeanfrancois.simon@sensiolabs.com"
++                },
++                {
++                    "name": "Fabien Potencier",
++                    "email": "fabien@symfony.com"
++                },
++                {
++                    "name": "Symfony Community",
++                    "homepage": "https://symfony.com/contributors"
++                }
++            ],
++            "description": "Symfony CssSelector Component",
++            "homepage": "https://symfony.com",
++            "time": "2015-05-15 13:33:16"
++        },
++        {
+             "name": "symfony/debug",
+             "version": "v2.6.9",
+             "target-dir": "Symfony/Component/Debug",
+@@ -1746,6 +1923,53 @@
+             "time": "2015-05-01 14:14:24"
+         },
+         {
++            "name": "tijsverkoyen/css-to-inline-styles",
++            "version": "1.5.4",
++            "source": {
++                "type": "git",
++                "url": "https://github.com/tijsverkoyen/CssToInlineStyles.git",
++                "reference": "3065b197f54c83392a4e0ba355678a5080dd9ee2"
++            },
++            "dist": {
++                "type": "zip",
++                "url": "https://api.github.com/repos/tijsverkoyen/CssToInlineStyles/zipball/3065b197f54c83392a4e0ba355678a5080dd9ee2",
++                "reference": "3065b197f54c83392a4e0ba355678a5080dd9ee2",
++                "shasum": ""
++            },
++            "require": {
++                "php": ">=5.3.0",
++                "symfony/css-selector": "~2.1"
++            },
++            "require-dev": {
++                "phpunit/phpunit": "~4.0"
++            },
++            "type": "library",
++            "extra": {
++                "branch-alias": {
++                    "dev-master": "1.5.x-dev"
++                }
++            },
++            "autoload": {
++                "psr-4": {
++                    "TijsVerkoyen\\CssToInlineStyles\\": "src"
++                }
++            },
++            "notification-url": "https://packagist.org/downloads/",
++            "license": [
++                "BSD"
++            ],
++            "authors": [
++                {
++                    "name": "Tijs Verkoyen",
++                    "email": "css_to_inline_styles@verkoyen.eu",
++                    "role": "Developer"
++                }
++            ],
++            "description": "CssToInlineStyles is a class that enables you to convert HTML-pages/files into HTML-pages/files with inline styles. This is very useful when you're sending emails.",
++            "homepage": "https://github.com/tijsverkoyen/CssToInlineStyles",
++            "time": "2015-04-01 14:40:03"
++        },
++        {
+             "name": "vlucas/phpdotenv",
+             "version": "v1.1.1",
+             "source": {
+diff --git a/config/app.php b/config/app.php
+index 20c7197..30d53b4 100644
+--- a/config/app.php
++++ b/config/app.php
+@@ -136,6 +136,7 @@ return [
+ 		'Illuminate\Validation\ValidationServiceProvider',
+ 		'Illuminate\View\ViewServiceProvider',
+                 'Illuminate\Html\HtmlServiceProvider',
++                'Maatwebsite\Excel\ExcelServiceProvider',
+ 		/*
+ 		 * Application Service Providers...
+ 		 */
+@@ -195,7 +196,7 @@ return [
+                 'Html'      => 'Illuminate\Html\HtmlFacade',
+                 'Form'      => 'Illuminate\Html\FormFacade',
+                 'Carbon'    => 'Carbon\Carbon',
+-
++                'Excel'     => 'Maatwebsite\Excel\Facades\Excel',
+ 	],
+ 
+ ];
+diff --git a/config/excel.php b/config/excel.php
+new file mode 100644
+index 0000000..927af8d
+--- /dev/null
++++ b/config/excel.php
+@@ -0,0 +1,683 @@
++<?php
++
++return array(
++
++    'cache'      => array(
++
++        /*
++        |--------------------------------------------------------------------------
++        | Enable/Disable cell caching
++        |--------------------------------------------------------------------------
++        */
++        'enable'   => true,
++
++        /*
++        |--------------------------------------------------------------------------
++        | Caching driver
++        |--------------------------------------------------------------------------
++        |
++        | Set the caching driver
++        |
++        | Available methods:
++        | memory|gzip|serialized|igbinary|discISAM|apc|memcache|temp|wincache|sqlite|sqlite3
++        |
++        */
++        'driver'   => 'memory',
++
++        /*
++        |--------------------------------------------------------------------------
++        | Cache settings
++        |--------------------------------------------------------------------------
++        */
++        'settings' => array(
++
++            'memoryCacheSize' => '32MB',
++            'cacheTime'       => 600
++
++        ),
++
++        /*
++        |--------------------------------------------------------------------------
++        | Memcache settings
++        |--------------------------------------------------------------------------
++        */
++        'memcache' => array(
++
++            'host' => 'localhost',
++            'port' => 11211,
++
++        ),
++
++        /*
++        |--------------------------------------------------------------------------
++        | Cache dir (for discISAM)
++        |--------------------------------------------------------------------------
++        */
++
++        'dir'      => storage_path('cache')
++    ),
++
++    'properties' => array(
++        'creator'        => 'Maatwebsite',
++        'lastModifiedBy' => 'Maatwebsite',
++        'title'          => 'Spreadsheet',
++        'description'    => 'Default spreadsheet export',
++        'subject'        => 'Spreadsheet export',
++        'keywords'       => 'maatwebsite, excel, export',
++        'category'       => 'Excel',
++        'manager'        => 'Maatwebsite',
++        'company'        => 'Maatwebsite',
++    ),
++
++    /*
++    |--------------------------------------------------------------------------
++    | Sheets settings
++    |--------------------------------------------------------------------------
++    */
++    'sheets'     => array(
++
++        /*
++        |--------------------------------------------------------------------------
++        | Default page setup
++        |--------------------------------------------------------------------------
++        */
++        'pageSetup' => array(
++            'orientation'           => 'portrait',
++            'paperSize'             => '9',
++            'scale'                 => '100',
++            'fitToPage'             => false,
++            'fitToHeight'           => true,
++            'fitToWidth'            => true,
++            'columnsToRepeatAtLeft' => array('', ''),
++            'rowsToRepeatAtTop'     => array(0, 0),
++            'horizontalCentered'    => false,
++            'verticalCentered'      => false,
++            'printArea'             => null,
++            'firstPageNumber'       => null,
++        ),
++    ),
++
++    /*
++    |--------------------------------------------------------------------------
++    | Creator
++    |--------------------------------------------------------------------------
++    |
++    | The default creator of a new Excel file
++    |
++    */
++
++    'creator'    => 'Maatwebsite',
++
++    'csv'        => array(
++        /*
++       |--------------------------------------------------------------------------
++       | Delimiter
++       |--------------------------------------------------------------------------
++       |
++       | The default delimiter which will be used to read out a CSV file
++       |
++       */
++
++        'delimiter'   => ',',
++
++        /*
++        |--------------------------------------------------------------------------
++        | Enclosure
++        |--------------------------------------------------------------------------
++        */
++
++        'enclosure'   => '"',
++
++        /*
++        |--------------------------------------------------------------------------
++        | Line endings
++        |--------------------------------------------------------------------------
++        */
++
++        'line_ending' => "\r\n"
++    ),
++
++    'export'     => array(
++
++        /*
++        |--------------------------------------------------------------------------
++        | Autosize columns
++        |--------------------------------------------------------------------------
++        |
++        | Disable/enable column autosize or set the autosizing for
++        | an array of columns ( array('A', 'B') )
++        |
++        */
++        'autosize'                    => true,
++
++        /*
++        |--------------------------------------------------------------------------
++        | Autosize method
++        |--------------------------------------------------------------------------
++        |
++        | --> PHPExcel_Shared_Font::AUTOSIZE_METHOD_APPROX
++        | The default is based on an estimate, which does its calculation based
++        | on the number of characters in the cell value (applying any calculation
++        | and format mask, and allowing for wordwrap and rotation) and with an
++        | "arbitrary" adjustment based on the font (Arial, Calibri or Verdana,
++        | defaulting to Calibri if any other font is used) and a proportional
++        | adjustment for the font size.
++        |
++        | --> PHPExcel_Shared_Font::AUTOSIZE_METHOD_EXACT
++        | The second method is more accurate, based on actual style formatting as
++        | well (bold, italic, etc), and is calculated by generating a gd2 imagettf
++        | bounding box and using its dimensions to determine the size; but this
++        | method is significantly slower, and its accuracy is still dependent on
++        | having the appropriate fonts installed.
++        |
++        */
++        'autosize-method'             => PHPExcel_Shared_Font::AUTOSIZE_METHOD_APPROX,
++
++        /*
++        |--------------------------------------------------------------------------
++        | Auto generate table heading
++        |--------------------------------------------------------------------------
++        |
++        | If set to true, the array indices (or model attribute names)
++        | will automatically be used as first row (table heading)
++        |
++        */
++        'generate_heading_by_indices' => true,
++
++        /*
++        |--------------------------------------------------------------------------
++        | Auto set alignment on merged cells
++        |--------------------------------------------------------------------------
++        */
++        'merged_cell_alignment'       => 'left',
++
++        /*
++        |--------------------------------------------------------------------------
++        | Pre-calculate formulas during export
++        |--------------------------------------------------------------------------
++        */
++        'calculate'                   => false,
++
++        /*
++        |--------------------------------------------------------------------------
++        | Include Charts during export
++        |--------------------------------------------------------------------------
++        */
++        'includeCharts'               => false,
++
++        /*
++        |--------------------------------------------------------------------------
++        | Default sheet settings
++        |--------------------------------------------------------------------------
++        */
++        'sheets'                      => array(
++
++            /*
++            |--------------------------------------------------------------------------
++            | Default page margin
++            |--------------------------------------------------------------------------
++            |
++            | 1) When set to false, default margins will be used
++            | 2) It's possible to enter a single margin which will
++            |    be used for all margins.
++            | 3) Alternatively you can pass an array with 4 margins
++            |    Default order: array(top, right, bottom, left)
++            |
++            */
++            'page_margin'          => false,
++
++            /*
++            |--------------------------------------------------------------------------
++            | Value in source array that stands for blank cell
++            |--------------------------------------------------------------------------
++            */
++            'nullValue'            => null,
++
++            /*
++            |--------------------------------------------------------------------------
++            | Insert array starting from this cell address as the top left coordinate
++            |--------------------------------------------------------------------------
++            */
++            'startCell'            => 'A1',
++
++            /*
++            |--------------------------------------------------------------------------
++            | Apply strict comparison when testing for null values in the array
++            |--------------------------------------------------------------------------
++            */
++            'strictNullComparison' => false
++        ),
++
++        /*
++        |--------------------------------------------------------------------------
++        | Store settings
++        |--------------------------------------------------------------------------
++        */
++
++        'store'                       => array(
++
++            /*
++            |--------------------------------------------------------------------------
++            | Path
++            |--------------------------------------------------------------------------
++            |
++            | The path we want to save excel file to
++            |
++            */
++            'path'       => storage_path('exports'),
++
++            /*
++            |--------------------------------------------------------------------------
++            | Return info
++            |--------------------------------------------------------------------------
++            |
++            | Whether we want to return information about the stored file or not
++            |
++            */
++            'returnInfo' => false
++
++        ),
++
++        /*
++        |--------------------------------------------------------------------------
++        | PDF Settings
++        |--------------------------------------------------------------------------
++        */
++        'pdf'                         => array(
++
++            /*
++            |--------------------------------------------------------------------------
++            | PDF Drivers
++            |--------------------------------------------------------------------------
++            | Supported: DomPDF, tcPDF, mPDF
++            */
++            'driver'  => 'DomPDF',
++
++            /*
++            |--------------------------------------------------------------------------
++            | PDF Driver settings
++            |--------------------------------------------------------------------------
++            */
++            'drivers' => array(
++
++                /*
++                |--------------------------------------------------------------------------
++                | DomPDF settings
++                |--------------------------------------------------------------------------
++                */
++                'DomPDF' => array(
++                    'path' => base_path('vendor/dompdf/dompdf/')
++                ),
++
++                /*
++                |--------------------------------------------------------------------------
++                | tcPDF settings
++                |--------------------------------------------------------------------------
++                */
++                'tcPDF'  => array(
++                    'path' => base_path('vendor/tecnick.com/tcpdf/')
++                ),
++
++                /*
++                |--------------------------------------------------------------------------
++                | mPDF settings
++                |--------------------------------------------------------------------------
++                */
++                'mPDF'   => array(
++                    'path' => base_path('vendor/mpdf/mpdf/')
++                ),
++            )
++        )
++    ),
++
++    'filters'    => array(
++        /*
++        |--------------------------------------------------------------------------
++        | Register read filters
++        |--------------------------------------------------------------------------
++        */
++
++        'registered' => array(
++            'chunk' => 'Maatwebsite\Excel\Filters\ChunkReadFilter'
++        ),
++
++        /*
++        |--------------------------------------------------------------------------
++        | Enable certain filters for every file read
++        |--------------------------------------------------------------------------
++        */
++
++        'enabled'    => array()
++    ),
++
++    'import'     => array(
++
++        /*
++        |--------------------------------------------------------------------------
++        | Has heading
++        |--------------------------------------------------------------------------
++        |
++        | The sheet has a heading (first) row which we can use as attribute names
++        |
++        | Options: true|false|slugged|ascii|numeric|hashed|trans|original
++        |
++        */
++
++        'heading'                 => 'true',
++
++        /*
++        |--------------------------------------------------------------------------
++        | First Row with data or heading of data
++        |--------------------------------------------------------------------------
++        |
++        | If the heading row is not the first row, or the data doesn't start
++        | on the first row, here you can change the start row.
++        |
++        */
++
++        'startRow'                => 4,
++
++        /*
++        |--------------------------------------------------------------------------
++        | Cell name word separator
++        |--------------------------------------------------------------------------
++        |
++        | The default separator which is used for the cell names
++        | Note: only applies to 'heading' settings 'true' && 'slugged'
++        |
++        */
++
++        'separator'               => '_',
++
++        /*
++        |--------------------------------------------------------------------------
++        | Include Charts during import
++        |--------------------------------------------------------------------------
++        */
++
++        'includeCharts'           => false,
++
++        /*
++        |--------------------------------------------------------------------------
++        | Sheet heading conversion
++        |--------------------------------------------------------------------------
++        |
++        | Convert headings to ASCII
++        | Note: only applies to 'heading' settings 'true' && 'slugged'
++        |
++        */
++
++        'to_ascii'                => true,
++
++        /*
++        |--------------------------------------------------------------------------
++        | Import encoding
++        |--------------------------------------------------------------------------
++        */
++
++        'encoding'                => array(
++
++            'input'  => 'UTF-8',
++            'output' => 'UTF-8'
++
++        ),
++
++        /*
++        |--------------------------------------------------------------------------
++        | Calculate
++        |--------------------------------------------------------------------------
++        |
++        | By default cells with formulas will be calculated.
++        |
++        */
++
++        'calculate'               => true,
++
++        /*
++        |--------------------------------------------------------------------------
++        | Ignore empty cells
++        |--------------------------------------------------------------------------
++        |
++        | By default empty cells are not ignored
++        |
++        */
++
++        'ignoreEmpty'             => false,
++
++        /*
++        |--------------------------------------------------------------------------
++        | Force sheet collection
++        |--------------------------------------------------------------------------
++        |
++        | For a sheet collection even when there is only 1 sheets.
++        | When set to false and only 1 sheet found, the parsed file will return
++        | a row collection instead of a sheet collection.
++        | When set to true, it will return a sheet collection instead.
++        |
++        */
++        'force_sheets_collection' => false,
++
++        /*
++        |--------------------------------------------------------------------------
++        | Date format
++        |--------------------------------------------------------------------------
++        |
++        | The format dates will be parsed to
++        |
++        */
++
++        'dates'                   => array(
++
++            /*
++            |--------------------------------------------------------------------------
++            | Enable/disable date formatting
++            |--------------------------------------------------------------------------
++            */
++            'enabled' => true,
++
++            /*
++            |--------------------------------------------------------------------------
++            | Default date format
++            |--------------------------------------------------------------------------
++            |
++            | If set to false, a carbon object will return
++            |
++            */
++            'format'  => false,
++
++            /*
++            |--------------------------------------------------------------------------
++            | Date columns
++            |--------------------------------------------------------------------------
++            */
++            'columns' => array()
++        ),
++
++        /*
++        |--------------------------------------------------------------------------
++        | Import sheets by config
++        |--------------------------------------------------------------------------
++        */
++        'sheets'                  => array(
++
++            /*
++            |--------------------------------------------------------------------------
++            | Example sheet
++            |--------------------------------------------------------------------------
++            |
++            | Example sheet "test" will grab the firstname at cell A2
++            |
++            */
++
++            'test' => array(
++
++                'firstname' => 'A2'
++
++            )
++
++        )
++    ),
++
++    'views'      => array(
++
++        /*
++        |--------------------------------------------------------------------------
++        | Styles
++        |--------------------------------------------------------------------------
++        |
++        | The default styles which will be used when parsing a view
++        |
++        */
++
++        'styles' => array(
++
++            /*
++            |--------------------------------------------------------------------------
++            | Table headings
++            |--------------------------------------------------------------------------
++            */
++            'th'     => array(
++                'font' => array(
++                    'bold' => true,
++                    'size' => 12,
++                )
++            ),
++
++            /*
++            |--------------------------------------------------------------------------
++            | Strong tags
++            |--------------------------------------------------------------------------
++            */
++            'strong' => array(
++                'font' => array(
++                    'bold' => true,
++                    'size' => 12,
++                )
++            ),
++
++            /*
++            |--------------------------------------------------------------------------
++            | Bold tags
++            |--------------------------------------------------------------------------
++            */
++            'b'      => array(
++                'font' => array(
++                    'bold' => true,
++                    'size' => 12,
++                )
++            ),
++
++            /*
++            |--------------------------------------------------------------------------
++            | Italic tags
++            |--------------------------------------------------------------------------
++            */
++            'i'      => array(
++                'font' => array(
++                    'italic' => true,
++                    'size'   => 12,
++                )
++            ),
++
++            /*
++            |--------------------------------------------------------------------------
++            | Heading 1
++            |--------------------------------------------------------------------------
++            */
++            'h1'     => array(
++                'font' => array(
++                    'bold' => true,
++                    'size' => 24,
++                )
++            ),
++
++            /*
++            |--------------------------------------------------------------------------
++            | Heading 2
++            |--------------------------------------------------------------------------
++            */
++            'h2'     => array(
++                'font' => array(
++                    'bold' => true,
++                    'size' => 18,
++                )
++            ),
++
++            /*
++            |--------------------------------------------------------------------------
++            | Heading 2
++            |--------------------------------------------------------------------------
++            */
++            'h3'     => array(
++                'font' => array(
++                    'bold' => true,
++                    'size' => 13.5,
++                )
++            ),
++
++            /*
++             |--------------------------------------------------------------------------
++             | Heading 4
++             |--------------------------------------------------------------------------
++             */
++            'h4'     => array(
++                'font' => array(
++                    'bold' => true,
++                    'size' => 12,
++                )
++            ),
++
++            /*
++             |--------------------------------------------------------------------------
++             | Heading 5
++             |--------------------------------------------------------------------------
++             */
++            'h5'     => array(
++                'font' => array(
++                    'bold' => true,
++                    'size' => 10,
++                )
++            ),
++
++            /*
++             |--------------------------------------------------------------------------
++             | Heading 6
++             |--------------------------------------------------------------------------
++             */
++            'h6'     => array(
++                'font' => array(
++                    'bold' => true,
++                    'size' => 7.5,
++                )
++            ),
++
++            /*
++             |--------------------------------------------------------------------------
++             | Hyperlinks
++             |--------------------------------------------------------------------------
++             */
++            'a'      => array(
++                'font' => array(
++                    'underline' => true,
++                    'color'     => array('argb' => 'FF0000FF'),
++                )
++            ),
++
++            /*
++             |--------------------------------------------------------------------------
++             | Horizontal rules
++             |--------------------------------------------------------------------------
++             */
++            'hr'     => array(
++                'borders' => array(
++                    'bottom' => array(
++                        'style' => 'thin',
++                        'color' => array('FF000000')
++                    ),
++                )
++            )
++        )
++
++    )
++
++);
+diff --git a/database/migrations/2015_06_14_154144_createCandidateTable.php b/database/migrations/2015_06_14_154144_createCandidateTable.php
+deleted file mode 100644
+index 5824b54..0000000
+--- a/database/migrations/2015_06_14_154144_createCandidateTable.php
++++ /dev/null
+@@ -1,124 +0,0 @@
+-<?php
+-
+-use Illuminate\Database\Schema\Blueprint;
+-use Illuminate\Database\Migrations\Migration;
+-
+-class CreateCandidateTable extends Migration {
+-
+-	/**
+-	 * Run the migrations.
+-	 *
+-	 * @return void
+-	 */
+-	public function up()
+-	{
+-		Schema::create('candidate', function(Blueprint $table)
+-		{
+-			$table->increments('id');
+-			$table->string('registration_type')->nullable();
+-                        $table->integer('institution_id')->nullable()/*->reference('id')->on('institution')*/;
+-                        $table->string('first_name')->nullable();
+-                        $table->string('middle_name')->nullable();
+-                        $table->string('last_name')->nullable();
+-                        $table->enum('gender', ['male','female'])->nullable();
+-                        $table->enum('marital_status', ['married','single'])->default('single');
+-                        $table->datetime('date_of_birth')->nullable();
+-                        $table->string('fathers_name')->nullable();
+-                        $table->string('mother_tongue')->nullable();
+-                        $table->string('language_known')->nullable();
+-                        $table->string('address1')->nullable();
+-                        $table->string('address2')->nullable();
+-                        $table->string('area')->nullable();
+-                        $table->string('city')->nullable();
+-                        $table->string('pincode', 6)->nullable();
+-                        $table->string('district')->nullable();
+-                        $table->string('state')->nullable();
+-                        $table->string('country')->nullable();
+-                        $table->string('email')->nullable();
+-                        $table->string('password')->nullable();
+-                        $table->string('alternate_email')->nullable();
+-                        $table->string('mobile', 10)->nullable();
+-                        $table->string('alternate_mobile', 10)->nullable();
+-                        $table->string('phone', 20)->nullable();
+-                        $table->string('alternate_phone', 20)->nullable();
+-                        $table->string('SSLC_course')->nullable();
+-                        $table->string('SSLC_institution')->nullable();
+-                        $table->string('SSLC_percentage')->nullable();
+-                        $table->string('SSLC_year_of_completion', 4)->nullable();
+-                        $table->string('HSC_course')->nullable();
+-                        $table->string('HSC_institution')->nullable();
+-                        $table->string('HSC_percentage')->nullable();
+-                        $table->string('HSC_year_of_completion', 4)->nullable();
+-                        $table->string('diploma_course')->nullable();
+-                        $table->string('diploma_institution')->nullable();
+-                        $table->string('diploma_percentage')->nullable();
+-                        $table->string('diploma_year_of_completion', 4)->nullable();
+-                        $table->string('UG_course')->nullable();
+-                        $table->string('UG_institution')->nullable();
+-                        $table->string('UG_percentage')->nullable();
+-                        $table->string('UG_year_of_completion', 4)->nullable();
+-                        $table->string('PG_course')->nullable();
+-                        $table->string('PG_institution')->nullable();
+-                        $table->string('PG_percentage')->nullable();
+-                        $table->string('year_of_completion', 4)->nullable();
+-                        $table->string('final_year_project_title')->nullable();
+-                        $table->string('final_year_project_summary')->nullable();
+-                        $table->string('experience1_organisation')->nullable();
+-                        $table->string('experience1_designation')->nullable();
+-                        $table->string('experience1_duration_in_years', 3)->default(0);
+-                        $table->string('experience1_responsibility')->nullable();
+-                        $table->string('experience1_salary_drawn')->nullable();
+-                        $table->string('experience2_organisation')->nullable();
+-                        $table->string('experience2_designation')->nullable();
+-                        $table->string('experience2_duration_in_years', 3)->nullable();
+-                        $table->string('experience2_responsibility')->nullable();
+-                        $table->string('experience2_salary_drawn')->nullable();
+-                        $table->string('experience3_organisation')->nullable();
+-                        $table->string('experience3_designation')->nullable();
+-                        $table->string('experience3_duration_in_years', 3)->nullable();
+-                        $table->string('experience3_responsibility')->nullable();
+-                        $table->string('experience3_salary_drawn')->nullable();
+-                        $table->string('career_interests')->nullable();
+-                        $table->string('skills')->nullable();
+-                        $table->string('technical_proficiency')->nullable();
+-                        $table->string('typewriting_proficiency')->nullable();
+-                        $table->string('extra_curricular_activities1')->nullable();
+-                        $table->string('extra_curricular_activities2')->nullable();
+-                        $table->string('extra_curricular_activities3')->nullable();
+-                        $table->string('extra_qualification1')->nullable();
+-                        $table->string('extra_qualification2')->nullable();
+-                        $table->string('extra_qualification3')->nullable();
+-                        $table->string('awards_and_recognition1')->nullable();
+-                        $table->string('awards_and_recognition2')->nullable();
+-                        $table->string('awards_and_recognition3')->nullable();
+-                        $table->string('resume_web_URL')->nullable();
+-                        $table->string('resume_upload_URL')->nullable();
+-                        $table->string('linkedin_profile_URL')->nullable();
+-                        $table->string('profile_picture_upload_URL')->nullable();
+-                        $table->enum('status', ['active','inactive'])->default('inactive');
+-                        $table->datetime('created_on')->nullable();
+-                        $table->string('created_by')->nullable();
+-                        $table->datetime('modified_on')->nullable();
+-                        $table->string('modified_by')->nullable();
+-                        $table->datetime('deactive_on')->nullable();
+-                        $table->string('deactivate_by')->nullable();
+-                        $table->text('remarks')->nullable();
+-                        //$table->primary([/*'institution_id,*/ 'first_name', 'last_name']);
+-		});
+-                // Candidate Upload - ExcelImportProcedure
+-                $insertProcedureForExcelImport = "DROP PROCEDURE IF EXISTS `create_candidates_from_excel`; CREATE PROCEDURE `create_candidates_from_excel` (IN _first_name VARCHAR(255), IN _last_name VARCHAR(255), IN _email VARCHAR(255), IN _mobile VARCHAR(10), IN _gender ENUM('male', 'female'), IN _date_of_birth DATE, IN _SSLC_course VARCHAR(255), IN _SSLC_percentage VARCHAR(255), IN _SSLC_year_of_completion VARCHAR(4), IN _HSC_course VARCHAR(255), IN _HSC_percentage VARCHAR(255), IN _HSC_year_of_completion VARCHAR(4), IN _UG_percentage VARCHAR(255), IN _status ENUM('active', 'inactive'), IN _created_by VARCHAR(255), IN _modified_by VARCHAR(255), OUT insertCount INT(11)) BEGIN INSERT INTO candidates (first_name, last_name, email, mobile, gender, date_of_birth, SSLC_course, SSLC_percentage, SSLC_year_of_completion, HSC_course, HSC_percentage, HSC_year_of_completion, UG_percentage, status, created_on, created_by, modified_on, modified_by) VALUES (_first_name, _last_name, _email, _mobile, _gender, _date_of_birth, _SSLC_course, _SSLC_percentage, _SSLC_year_of_completion, _HSC_course, _HSC_percentage, _HSC_year_of_completion, _UG_percentage, _status, now(), _created_by, now(), _modified_by); SET insertCount = ROW_COUNT(); END";
+-                DB::unprepared($insertProcedureForExcelImport);
+-	}
+-
+-	/**
+-	 * Reverse the migrations.
+-	 *
+-	 * @return void
+-	 */
+-	public function down()
+-	{
+-                DB::unprepared("DROP PROCEDURE IF EXISTS `create_candidates_from_excel`");
+-		Schema::drop('candidate');
+-	}
+-
+-}
+diff --git a/database/migrations/2015_06_15_032100_createCandidatesTable.php b/database/migrations/2015_06_15_032100_createCandidatesTable.php
+new file mode 100644
+index 0000000..fd0452c
+--- /dev/null
++++ b/database/migrations/2015_06_15_032100_createCandidatesTable.php
+@@ -0,0 +1,123 @@
++<?php
++
++use Illuminate\Database\Schema\Blueprint;
++use Illuminate\Database\Migrations\Migration;
++
++class CreateCandidatesTable extends Migration {
++
++	/**
++	 * Run the migrations.
++	 *
++	 * @return void
++	 */
++	public function up()
++	{
++		Schema::create('candidates', function(Blueprint $table)
++		{
++			$table->increments('id');
++			$table->string('registration_type')->nullable();
++                        $table->integer('institution_id')->nullable()/*->reference('id')->on('institution')*/;
++                        $table->string('first_name')->nullable();
++                        $table->string('middle_name')->nullable();
++                        $table->string('last_name')->nullable();
++                        $table->enum('gender', ['male','female'])->nullable();
++                        $table->enum('marital_status', ['married','single'])->default('single');
++                        $table->date('date_of_birth')->nullable();
++                        $table->string('fathers_name')->nullable();
++                        $table->string('mother_tongue')->nullable();
++                        $table->string('language_known')->nullable();
++                        $table->string('address1')->nullable();
++                        $table->string('address2')->nullable();
++                        $table->string('area')->nullable();
++                        $table->string('city')->nullable();
++                        $table->string('pincode', 6)->nullable();
++                        $table->string('district')->nullable();
++                        $table->string('state')->nullable();
++                        $table->string('country')->nullable();
++                        $table->string('email')->nullable();
++                        $table->string('password')->nullable();
++                        $table->string('alternate_email')->nullable();
++                        $table->string('mobile', 10)->nullable();
++                        $table->string('alternate_mobile', 10)->nullable();
++                        $table->string('phone', 20)->nullable();
++                        $table->string('alternate_phone', 20)->nullable();
++                        $table->string('SSLC_course')->nullable();
++                        $table->string('SSLC_institution')->nullable();
++                        $table->string('SSLC_percentage')->nullable();
++                        $table->string('SSLC_year_of_completion', 4)->nullable();
++                        $table->string('HSC_course')->nullable();
++                        $table->string('HSC_institution')->nullable();
++                        $table->string('HSC_percentage')->nullable();
++                        $table->string('HSC_year_of_completion', 4)->nullable();
++                        $table->string('diploma_course')->nullable();
++                        $table->string('diploma_institution')->nullable();
++                        $table->string('diploma_percentage')->nullable();
++                        $table->string('diploma_year_of_completion', 4)->nullable();
++                        $table->string('UG_course')->nullable();
++                        $table->string('UG_institution')->nullable();
++                        $table->string('UG_percentage')->nullable();
++                        $table->string('UG_year_of_completion', 4)->nullable();
++                        $table->string('PG_course')->nullable();
++                        $table->string('PG_institution')->nullable();
++                        $table->string('PG_percentage')->nullable();
++                        $table->string('year_of_completion', 4)->nullable();
++                        $table->string('final_year_project_title')->nullable();
++                        $table->string('final_year_project_summary')->nullable();
++                        $table->string('experience1_organisation')->nullable();
++                        $table->string('experience1_designation')->nullable();
++                        $table->string('experience1_duration_in_years', 3)->default(0);
++                        $table->string('experience1_responsibility')->nullable();
++                        $table->string('experience1_salary_drawn')->nullable();
++                        $table->string('experience2_organisation')->nullable();
++                        $table->string('experience2_designation')->nullable();
++                        $table->string('experience2_duration_in_years', 3)->nullable();
++                        $table->string('experience2_responsibility')->nullable();
++                        $table->string('experience2_salary_drawn')->nullable();
++                        $table->string('experience3_organisation')->nullable();
++                        $table->string('experience3_designation')->nullable();
++                        $table->string('experience3_duration_in_years', 3)->nullable();
++                        $table->string('experience3_responsibility')->nullable();
++                        $table->string('experience3_salary_drawn')->nullable();
++                        $table->string('career_interests')->nullable();
++                        $table->string('skills')->nullable();
++                        $table->string('technical_proficiency')->nullable();
++                        $table->string('typewriting_proficiency')->nullable();
++                        $table->string('extra_curricular_activities1')->nullable();
++                        $table->string('extra_curricular_activities2')->nullable();
++                        $table->string('extra_curricular_activities3')->nullable();
++                        $table->string('extra_qualification1')->nullable();
++                        $table->string('extra_qualification2')->nullable();
++                        $table->string('extra_qualification3')->nullable();
++                        $table->string('awards_and_recognition1')->nullable();
++                        $table->string('awards_and_recognition2')->nullable();
++                        $table->string('awards_and_recognition3')->nullable();
++                        $table->string('resume_web_URL')->nullable();
++                        $table->string('resume_upload_URL')->nullable();
++                        $table->string('linkedin_profile_URL')->nullable();
++                        $table->string('profile_picture_upload_URL')->nullable();
++                        $table->enum('status', ['active','inactive'])->default('inactive');
++                        $table->datetime('created_on')->nullable();
++                        $table->string('created_by')->nullable();
++                        $table->datetime('modified_on')->nullable();
++                        $table->string('modified_by')->nullable();
++                        $table->datetime('deactive_on')->nullable();
++                        $table->string('deactivate_by')->nullable();
++                        $table->text('remarks')->nullable();
++                        //$table->primary([/*'institution_id,*/ 'first_name', 'last_name']);
++		});
++                // Candidate Upload - ExcelImportProcedure
++                $insertProcedureForExcelImport = "DROP PROCEDURE IF EXISTS `create_candidates_from_excel`; CREATE PROCEDURE `create_candidates_from_excel` (IN _first_name VARCHAR(255), IN _last_name VARCHAR(255), IN _email VARCHAR(255), IN _mobile VARCHAR(10), IN _gender ENUM('male', 'female'), IN _date_of_birth DATE, IN _SSLC_course VARCHAR(255), IN _SSLC_percentage VARCHAR(255), IN _SSLC_year_of_completion VARCHAR(4), IN _HSC_course VARCHAR(255), IN _HSC_percentage VARCHAR(255), IN _HSC_year_of_completion VARCHAR(4), IN _UG_percentage VARCHAR(255), IN _status ENUM('active', 'inactive'), IN _created_by VARCHAR(255), IN _modified_by VARCHAR(255), OUT insertCount INT(11)) BEGIN INSERT INTO candidates (first_name, last_name, email, mobile, gender, date_of_birth, SSLC_course, SSLC_percentage, SSLC_year_of_completion, HSC_course, HSC_percentage, HSC_year_of_completion, UG_percentage, status, created_on, created_by, modified_on, modified_by) VALUES (_first_name, _last_name, _email, _mobile, _gender, _date_of_birth, _SSLC_course, _SSLC_percentage, _SSLC_year_of_completion, _HSC_course, _HSC_percentage, _HSC_year_of_completion, _UG_percentage, _status, now(), _created_by, now(), _modified_by); SET insertCount = ROW_COUNT(); END";
++                DB::unprepared($insertProcedureForExcelImport);
++	}
++
++	/**
++	 * Reverse the migrations.
++	 *
++	 * @return void
++	 */
++	public function down()
++	{
++                DB::unprepared("DROP PROCEDURE IF EXISTS `create_candidates_from_excel`");
++		Schema::drop('candidates');
++	}
++}
+diff --git a/public/candidate/registration_sheet.xls b/public/candidate/registration_sheet.xls
+new file mode 100644
+index 0000000..4fb7506
+Binary files /dev/null and b/public/candidate/registration_sheet.xls differ
+diff --git a/registration_sheet.xls b/registration_sheet.xls
+new file mode 100644
+index 0000000..4fb7506
+Binary files /dev/null and b/registration_sheet.xls differ
+diff --git a/resources/views/admin/candidateRegistration.blade.php b/resources/views/admin/candidateRegistration.blade.php
+new file mode 100644
+index 0000000..e64ff08
+--- /dev/null
++++ b/resources/views/admin/candidateRegistration.blade.php
+@@ -0,0 +1,67 @@
++<html>
++    <head>
++        <title>Candidate Signup</title>
++        <style>body{margin:0;padding:0;width:100%;height:100%;display:table;font-weight:100;font-family:'Lato'}.container{text-align:center;display:table-cell;}.content{text-align:center;}.title{font-family:Arial,Verdana;font-size:20px;font-weight:700;margin-bottom:40px;color:#FF8500}.quote{font-size:24px}.basic-grey{width:800px;max-width:800px;background:#F7F7F7;padding:25px 15px 25px 10px;font:12px Georgia,"Times New Roman",Times,serif;color:#888;text-shadow:1px 1px 1px #FFF;border:1px solid #E4E4E4}.basic-grey-table{width:500px; border: 1px solid #ccc; border-collapse: collapse; }.basic-grey-table td{ border: 1px solid #ccc; border-collapse: collapse; padding:4px}.basic-grey h1{font-size:25px;padding:0 0 10px 40px;display:block;border-bottom:1px solid #E4E4E4;margin:-10px -15px 30px -10px;color:#888}.basic-grey h1>span{display:block;font-size:11px}.basic-grey input[type="text"],.basic-grey input[type="email"],.basic-grey textarea,.basic-grey select{border:1px solid #DADADA;color:#888;height:30px;outline:0 none;padding:4px;width:100%;font-size:12px;line-height:15px;box-shadow:inset 0 1px 4px #ECECEC;-moz-box-shadow:inset 0 1px 4px #ECECEC;-webkit-box-shadow:inset 0 1px 4px #ECECEC}.basic-grey textarea{padding:5px 3px 3px 5px}.basic-grey select{background:#FFF url(down-arrow.png) no-repeat right;background:#FFF url(down-arrow.png) no-repeat right;appearance:none;-webkit-appearance:none;-moz-appearance:none;text-indent:.01px;width:70%;height:35px;line-height:25px}.basic-grey textarea{height:100px}.basic-grey input[type="submit"],input[type="reset"]{background:#FF8500;border:none;padding:10px 25px;color:#FFF;box-shadow:1px 1px 5px #B6B6B6;border-radius:3px;cursor:pointer;font-size:16px;font-weight:700;font-family:Arial,Verdana}.basic-grey input[type="submit"]:hover,input[type="reset"]:hover{background:#EA7B00}.error{font-size:10px;color:red}.message{font-size:12px;font-family:Arial;color:green;}</style>
++    </head>
++    <body>
++        <div class="container"><div class="container"><a href="/index.php/college">College Register</a>&nbsp;&nbsp;<a href="/index.php/college/view">College View</a>&nbsp;&nbsp;
++                <a href="/index.php/candidate">Candidate View</a>&nbsp;&nbsp;<a href="/index.php/auth/logout">Logout</a>
++            <div class="content">
++                <div class="quote">
++                    <div class="basic-grey">
++                        {!! Form::open(['action' => 'admin\CandidateController@save', 'files' => 'true']) !!}
++                        <div class="message">{!! Session::get('message') !!}</div>
++                        <table class="basic-grey-table">
++                            <tr>
++                                <td colspan="13" align="left"><div class="title">Candidate Signup</div></td>
++                            </tr>
++                            <tr>
++                                <td colspan="13" align="left">{!! Form::file('excel_file') !!}{!! Form::submit('upload') !!}</td>
++                            </tr>
++                            <tr>
++                                <td>First name</td>
++                                <td>Last name</td>
++                                <td>Email</td>
++                                <td>Mobile</td>
++                                <td>Date of Birth</td>
++                                <td>Gender</td>
++                                <td>SSLC course</td>
++                                <td>SSLC percentage</td>
++                                <td>SSLC year of completion</td>
++                                <td>HSC course</td>
++                                <td>HSC percentage</td>
++                                <td>HSC year of completion</td>
++                                <td>UG percentage</td>
++                            </tr>
++                            @if (!$candidate)
++                            <tr>
++                                <td colspan="13" align="left">No Candidate(s) available</td>
++                            </tr>
++                            @endif
++                            @foreach ($candidate as $row)
++                            <tr>
++                                <td>{!! $row['first_name'] !!}</td>
++                                <td>{!! $row['last_name'] !!}</td>
++                                <td>{!! $row['email'] !!}</td>
++                                <td>{!! $row['mobile'] !!}</td>
++                                <td>{!! \Carbon\Carbon::parse($row['date_of_birth'])->format('d/m/Y'); !!}</td>
++                                <td>{!! $row['gender'] !!}</td>
++                                <td>{!! $row['SSLC_course'] !!}</td>
++                                <td>{!! $row['SSLC_percentage'] !!}</td>
++                                <td>{!! $row['SSLC_year_of_completion'] !!}</td>
++                                <td>{!! $row['HSC_course'] !!}</td>
++                                <td>{!! $row['HSC_percentage'] !!}</td>
++                                <td>{!! $row['HSC_year_of_completion'] !!}</td>
++                                <td>{!! $row['UG_percentage'] !!}</td>
++                            </tr>    
++                            @endforeach
++                        </table>
++                        {!! Form::close() !!}
++                    </div>    
++                </div>
++            </div>
++        </div>
++    </body>
++</html>
++
++
+diff --git a/resources/views/admin/collegeview.blade.php b/resources/views/admin/collegeview.blade.php
+new file mode 100644
+index 0000000..2b54a19
+--- /dev/null
++++ b/resources/views/admin/collegeview.blade.php
+@@ -0,0 +1,53 @@
++<html>
++    <head>
++        <title>Candidate Signup</title>
++        <style>body{margin:0;padding:0;width:100%;height:100%;display:table;font-weight:100;font-family:'Lato'}.container{text-align:center;display:table-cell;}.content{text-align:center;}.title{font-family:Arial,Verdana;font-size:20px;font-weight:700;margin-bottom:40px;color:#FF8500}.quote{font-size:24px}.basic-grey{width:800px;max-width:800px;background:#F7F7F7;padding:25px 15px 25px 10px;font:12px Georgia,"Times New Roman",Times,serif;color:#888;text-shadow:1px 1px 1px #FFF;border:1px solid #E4E4E4}.basic-grey-table{width:500px; border: 1px solid #ccc; border-collapse: collapse; }.basic-grey-table td{ border: 1px solid #ccc; border-collapse: collapse; padding:4px}.basic-grey h1{font-size:25px;padding:0 0 10px 40px;display:block;border-bottom:1px solid #E4E4E4;margin:-10px -15px 30px -10px;color:#888}.basic-grey h1>span{display:block;font-size:11px}.basic-grey input[type="text"],.basic-grey input[type="email"],.basic-grey textarea,.basic-grey select{border:1px solid #DADADA;color:#888;height:30px;outline:0 none;padding:4px;width:100%;font-size:12px;line-height:15px;box-shadow:inset 0 1px 4px #ECECEC;-moz-box-shadow:inset 0 1px 4px #ECECEC;-webkit-box-shadow:inset 0 1px 4px #ECECEC}.basic-grey textarea{padding:5px 3px 3px 5px}.basic-grey select{background:#FFF url(down-arrow.png) no-repeat right;background:#FFF url(down-arrow.png) no-repeat right;appearance:none;-webkit-appearance:none;-moz-appearance:none;text-indent:.01px;width:70%;height:35px;line-height:25px}.basic-grey textarea{height:100px}.basic-grey input[type="submit"],input[type="reset"]{background:#FF8500;border:none;padding:10px 25px;color:#FFF;box-shadow:1px 1px 5px #B6B6B6;border-radius:3px;cursor:pointer;font-size:16px;font-weight:700;font-family:Arial,Verdana}.basic-grey input[type="submit"]:hover,input[type="reset"]:hover{background:#EA7B00}.error{font-size:10px;color:red}.message{font-size:12px;font-family:Arial;color:green;}</style>
++    </head>
++    <body>
++        <div class="container">
++            <a href="/index.php/college">College Register</a>&nbsp;&nbsp;<a href="/index.php/college/view">College View</a>&nbsp;&nbsp;
++            <a href="/index.php/candidate">Candidate View</a>&nbsp;&nbsp;<a href="/index.php/auth/logout">Logout</a>
++            <div class="content">
++                <div class="quote">
++                    <div class="basic-grey">                        
++                        
++                        <table class="basic-grey-table">
++                            <tr>
++                                <td colspan="13" align="left"><div class="title">College View</div></td>
++                            </tr>
++                            <tr>
++                                <td>First name</td>
++                                <td>Last name</td>
++                                <td>Email</td>
++                                <td>Mobile</td>
++                                <td>Date of Birth</td>
++                                <td>Gender</td>
++                                <td>SSLC course</td>
++                                <td>SSLC percentage</td>
++                                <td>SSLC year of completion</td>
++                                <td>HSC course</td>
++                                <td>HSC percentage</td>
++                                <td>HSC year of completion</td>
++                                <td>UG percentage</td>
++                            </tr>
++                            @if (!$college)
++                            <tr>
++                                <td colspan="13" align="left">No College(s) available</td>
++                            </tr>
++                            @endif
++                            @foreach ($college as $row)
++                            <tr>
++                                <td>{!! $row['name'] !!}</td>
++                                <td>{!! $row['city'] !!}</td>
++                                
++                            </tr>    
++                            @endforeach
++                        </table>                        
++                    </div>    
++                </div>
++            </div>
++        </div>
++    </body>
++</html>
++
++
+diff --git a/resources/views/college/register.blade.php b/resources/views/college/register.blade.php
+index 7825ade..cc3099c 100644
+--- a/resources/views/college/register.blade.php
++++ b/resources/views/college/register.blade.php
+@@ -5,7 +5,7 @@
+     </head>
+     <body>
+         <div class="container">
+-            <div class="content">
++            <div class="content"><a href="/index.php/college/view">College View</a>
+                 <div class="quote">
+                     <div class="basic-grey">
+                         {!! Form::open(['action' => 'CollegeController@signup']) !!}

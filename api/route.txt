@@ -1,0 +1,49 @@
++--------+--------------------------------+-------------------------------------------------------+------+-------------------------------------------------------------------+------------+
+| Domain | Method                         | URI                                                   | Name | Action                                                            | Middleware |
++--------+--------------------------------+-------------------------------------------------------+------+-------------------------------------------------------------------+------------+
+|        | GET|HEAD                       | auth/viewLogin                                        |      | App\Http\Controllers\Auth\AuthController@viewLogin                |            |
+|        | GET|HEAD                       | /                                                     |      | App\Http\Controllers\CollegeController@index                      | auth       |
+|        | GET|HEAD                       | college                                               |      | App\Http\Controllers\CollegeController@index                      | auth       |
+|        | POST                           | college/signup                                        |      | App\Http\Controllers\CollegeController@signup                     |            |
+|        | GET|HEAD                       | college/view                                          |      | App\Http\Controllers\CollegeController@listAll                    | auth       |
+|        | GET|HEAD                       | college/initial                                       |      | App\Http\Controllers\CollegeController@initial                    | auth       |
+|        | POST                           | college/process                                       |      | App\Http\Controllers\CollegeController@process                    | auth       |
+|        | POST                           | college/district                                      |      | App\Http\Controllers\CollegeController@district                   |            |
+|        | POST                           | college/joblist                                       |      | App\Http\Controllers\CollegeController@jobList                    | auth       |
+|        | POST                           | college/jobDetail                                     |      | App\Http\Controllers\CollegeController@getJobDetail               | auth       |
+|        | POST                           | college/notify                                        |      | App\Http\Controllers\CollegeController@notify                     | auth       |
+|        | POST                           | college/adddegree                                     |      | App\Http\Controllers\CollegeController@adddegree                  | auth       |
+|        | GET|HEAD                       | college/addstudentview                                |      | App\Http\Controllers\CollegeController@addStudentView             | auth       |
+|        | POST                           | college/save                                          |      | App\Http\Controllers\CollegeController@save                       | auth       |
+|        | POST                           | college/addStudent                                    |      | App\Http\Controllers\CollegeController@addStudent                 | auth       |
+|        | POST                           | college/uploadstd                                     |      | App\Http\Controllers\CollegeController@uploadstudent              | auth       |
+|        | POST                           | college/stdlist                                       |      | App\Http\Controllers\CollegeController@stdlist                    | auth       |
+|        | POST                           | college/interviewstdlist                              |      | App\Http\Controllers\CollegeController@interviewstdlist           | auth       |
+|        | POST                           | college/clgstdlist                                    |      | App\Http\Controllers\CollegeController@clgstdlist                 | auth       |
+|        | POST                           | college/dash/stdview                                  |      | App\Http\Controllers\CollegeController@stdview                    | auth       |
+|        | POST                           | college/notifyStudents                                |      | App\Http\Controllers\CollegeController@notifyStudents             | auth       |
+|        | POST                           | college/notification                                  |      | App\Http\Controllers\CollegeController@notification               | auth       |
+|        | POST                           | candidate/add                                         |      | App\Http\Controllers\CandidateController@add                      | auth       |
+|        | POST                           | candidate/addStudent                                  |      | App\Http\Controllers\CandidateController@addStudent               | auth       |
+|        | POST                           | candidate/save                                        |      | App\Http\Controllers\CandidateController@save                     | auth       |
+|        | GET|HEAD                       | candidate/listDegrees                                 |      | App\Http\Controllers\CandidateController@listDegrees              | auth       |
+|        | GET|HEAD                       | candidate/getStudentsCountByDegree                    |      | App\Http\Controllers\CandidateController@getStudentsCountByDegree | auth       |
+|        | GET|HEAD                       | home                                                  |      | App\Http\Controllers\HomeController@index                         | auth       |
+|        | POST                           | candidate/dashboard                                   |      | App\Http\Controllers\CandidateController@dashboard                | auth       |
+|        | POST                           | candidate/profile                                     |      | App\Http\Controllers\CandidateController@profile                  | auth       |
+|        | POST                           | company/addCompany                                    |      | App\Http\Controllers\CompanyController@addCompany                 | auth       |
+|        | POST                           | company/postjob                                       |      | App\Http\Controllers\CompanyController@postjob                    | auth       |
+|        | POST                           | company/dash                                          |      | App\Http\Controllers\CompanyController@dash                       | auth       |
+|        | POST                           | company/signup                                        |      | App\Http\Controllers\CompanyController@signup                     | auth       |
+|        | POST                           | auth/login/{one?}/{two?}/{three?}/{four?}/{five?}     |      | App\Http\Controllers\Auth\AuthController@postLogin                |            |
+|        | GET|HEAD                       | auth/register/{one?}/{two?}/{three?}/{four?}/{five?}  |      | App\Http\Controllers\Auth\AuthController@getRegister              | auth       |
+|        | POST                           | auth/register/{one?}/{two?}/{three?}/{four?}/{five?}  |      | App\Http\Controllers\Auth\AuthController@postRegister             | auth       |
+|        | GET|HEAD                       | auth/login/{one?}/{two?}/{three?}/{four?}/{five?}     |      | App\Http\Controllers\Auth\AuthController@getLogin                 | auth       |
+|        | GET|HEAD                       | auth/logout/{one?}/{two?}/{three?}/{four?}/{five?}    |      | App\Http\Controllers\Auth\AuthController@getLogout                | auth       |
+|        | GET|HEAD|POST|PUT|PATCH|DELETE | auth/{_missing}                                       |      | App\Http\Controllers\Auth\AuthController@missingMethod            | auth       |
+|        | GET|HEAD                       | password/email/{one?}/{two?}/{three?}/{four?}/{five?} |      | App\Http\Controllers\Auth\PasswordController@getEmail             | guest      |
+|        | POST                           | password/email/{one?}/{two?}/{three?}/{four?}/{five?} |      | App\Http\Controllers\Auth\PasswordController@postEmail            | guest      |
+|        | GET|HEAD                       | password/reset/{one?}/{two?}/{three?}/{four?}/{five?} |      | App\Http\Controllers\Auth\PasswordController@getReset             | guest      |
+|        | POST                           | password/reset/{one?}/{two?}/{three?}/{four?}/{five?} |      | App\Http\Controllers\Auth\PasswordController@postReset            | guest      |
+|        | GET|HEAD|POST|PUT|PATCH|DELETE | password/{_missing}                                   |      | App\Http\Controllers\Auth\PasswordController@missingMethod        | guest      |
++--------+--------------------------------+-------------------------------------------------------+------+-------------------------------------------------------------------+------------+

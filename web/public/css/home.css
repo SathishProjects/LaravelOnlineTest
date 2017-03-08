@@ -1,0 +1,290 @@
+    
+    body {
+  padding-top: 33px;
+  background-color:#f5f5f5;
+}
+
+.account-wall
+{
+    margin-top: 80px;
+    padding: 40px 0px 20px 0px;
+    background-color: #ffffff;
+    box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.16);
+}
+
+.margin1{
+    margin-top: 18px;
+}
+.margin2{
+    margin-top: 7px;
+}
+
+.navbar2 {
+    min-height: 100px;
+    margin-bottom: 0px;
+}
+
+.collapse_top {
+     margin-top: 25px;
+}
+
+.caret-up {
+    width: 0; 
+    height: 0; 
+    border-left: 4px solid rgba(0, 0, 0, 0);
+    border-right: 4px solid rgba(0, 0, 0, 0);
+    border-bottom: 4px solid;
+    
+    display: inline-block;
+    margin-left: 2px;
+    vertical-align: middle;
+}
+
+ul .social:hover:after{
+   border-top: 2px solid #f0ad4e;
+   bottom: 0;
+   content: "";
+   left: 0;
+   position: absolute;
+  width: 40px;
+}
+
+ul .link1:hover:after{
+   border-top: 3px solid #f0ad4e;
+   bottom: 0;
+   content: "";
+   left: 0;
+   position: absolute;
+  width: 80px;
+}
+
+ul .link2:hover:after{
+   border-top: 3px solid #f0ad4e;
+   bottom: 0;
+   content: "";
+   left: 0;
+   position: absolute;
+  width: 70px;
+}
+
+
+
+ .fontcolor1{
+  color: #ffcd3a;
+}
+
+.fontcolor2{
+  color: white;
+}
+
+.fontcolor3{
+  color: darkorange;
+}
+
+.navbar-default1 {
+    background: #333;
+    margin: 0px;
+    min-height: 33px;
+}
+
+.nav1>li>a{
+        padding-top: 5px;
+        padding-bottom: 5px;
+}
+
+.navbar-default1 .navbar-nav>li>.fontcolor2 {
+    color: white;
+}
+
+.navbar-default1 .navbar-nav>li>a:hover {
+    color: #fff;
+}
+
+.no_padding_margin{
+  padding: 0px !important;
+  margin: 0px !important;
+  border-radius: 0px !important;
+  border: 0px !important;
+}
+
+.btn {
+    border-radius: 0px !important;
+}
+
+
+/*Login page*/
+
+
+  .signinpanel {
+    width: 780px;
+    margin: 0% auto 0 auto;
+}
+
+.form-signin {
+ 
+  display:block;
+  background-color: #f7f7f7;
+  -moz-box-shadow: 0 0 3px 3px #eaeaea;
+    -webkit-box-shadow: 0 0 3px 3px #eaeaea;
+  box-shadow: 0 0 3px 3px #eaeaea;
+  border-radius:2px;
+}
+.main{
+  padding: 20px;
+}
+.social-box{
+  margin: 0 auto;
+  padding: 38px;
+  border-bottom:1px #ccc solid;
+}
+.social-box a{
+  font-weight:bold;
+  font-size:18px;
+  padding:8px;
+}
+.social-box a i{
+  font-weight:bold;
+  font-size:20px;
+}
+.heading-desc{
+  font-size:20px;
+  font-weight:bold;
+  padding:38px 38px 0px 38px;
+  
+}
+.form-signin .form-signin-heading,
+.form-signin .checkbox {
+  margin-bottom: 10px;
+}
+.form-signin .checkbox {
+  font-weight: normal;
+}
+.form-signin .form-control {
+  position: relative;
+  font-size: 16px;
+  height: 20px;
+  padding: 20px;
+  -webkit-box-sizing: border-box;
+     -moz-box-sizing: border-box;
+          box-sizing: border-box;
+}
+.form-signin .form-control:focus {
+  z-index: 2;
+}
+.form-signin input[type="text"] {
+  margin-bottom: 0px;
+  border-radius: 5px;
+}
+.form-signin input[type="password"] {
+  margin-bottom: 0px;
+  border-radius: 5px;
+}
+.input-group {
+    margin-bottom: 15px;
+}
+.login-footer{
+  background:#f0f0f0;
+  margin: 0 auto;
+  border-top: 1px solid #dadada;
+  padding:20px;
+}
+.login-footer .left-section a{
+  font-weight:bold;
+  line-height:19px;
+}
+.mg-btm{
+  margin-bottom:20px;
+}
+
+
+@media (min-width: 500px) and (max-width: 979px) { 
+
+body{
+    margin-left: 100px !important;
+  }
+
+ }
+
+@media only screen and (max-width: 370px) { 
+
+.logo1{
+  margin-top: -35px;
+}
+
+ }
+
+ .input-group-addon {
+    border-radius: 0px !important;
+}
+
+.form-control {
+    border-radius: 0px !important;
+}
+
+.dropdown-menu>.active>a, .dropdown-menu>.active>a:hover, .dropdown-menu>.active>a:focus {
+    color: #fff;
+    text-decoration: none;
+    background-color: #c9202c;
+    outline: 0;
+}
+
+
+
+@media screen and (max-width: 600px) {
+    
+    .multiselect {
+        display:inline-block;
+    }
+}
+
+
+.note{
+  color: red;
+  font-size: 11px;
+}
+
+
+
+ .href2, .href2:hover, .href2:focus {
+    text-decoration: none !important;
+    color: White;
+    cursor: pointer !important;
+}
+
+.btn2, .btn2:hover, .btn2:focus {
+    background-color: black;
+    border-color: white;
+    color: White;
+}
+
+.center{
+    text-align: center;
+}
+
+.modal-body h4{
+  font-size: 18px !important;
+}
+
+.close{
+    font-size: 40px;
+}
+.modal-content {
+    box-shadow: 0 0px 0px rgba(0,0,0,.5);
+    border-radius: 0px;
+}
+.modal-backdrop, .modal-backdrop.fade.in {
+    opacity: 0.8;
+    filter: alpha(opacity=80);
+}
+.modal-backdrop, .modal-backdrop.fade.in {
+    opacity: 0.8;
+    filter: alpha(opacity=80);
+}
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background-color: #000000;
+}

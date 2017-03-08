@@ -1,0 +1,43 @@
+[2017-03-08 10:56:04] local.ERROR: InvalidArgumentException: Command "key:generete" is not defined.
+
+Did you mean one of these?
+    key:generate
+    event:generate in C:\xampp\htdocs\onlinetest\web\vendor\symfony\console\Symfony\Component\Console\Application.php:549
+Stack trace:
+#0 C:\xampp\htdocs\onlinetest\web\vendor\symfony\console\Symfony\Component\Console\Application.php(192): Symfony\Component\Console\Application->find('key:generete')
+#1 C:\xampp\htdocs\onlinetest\web\vendor\symfony\console\Symfony\Component\Console\Application.php(126): Symfony\Component\Console\Application->doRun(Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
+#2 C:\xampp\htdocs\onlinetest\web\vendor\laravel\framework\src\Illuminate\Foundation\Console\Kernel.php(94): Symfony\Component\Console\Application->run(Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
+#3 C:\xampp\htdocs\onlinetest\web\artisan(35): Illuminate\Foundation\Console\Kernel->handle(Object(Symfony\Component\Console\Input\ArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
+#4 {main}  
+[2017-03-08 11:09:39] local.ERROR: ErrorException: mcrypt_encrypt(): Key of size 51 not supported by this algorithm. Only keys of sizes 16, 24 or 32 supported in C:\xampp\htdocs\onlinetest\web\vendor\laravel\framework\src\Illuminate\Encryption\Encrypter.php:81
+Stack trace:
+#0 [internal function]: Illuminate\Foundation\Bootstrap\HandleExceptions->handleError(2, 'mcrypt_encrypt(...', 'C:\\xampp\\htdocs...', 81, Array)
+#1 C:\xampp\htdocs\onlinetest\web\vendor\laravel\framework\src\Illuminate\Encryption\Encrypter.php(81): mcrypt_encrypt('rijndael-128', 'base64:PPLr+zm+...', 's:40:"84d3ea322...', 'cbc', '\xC2l\xCFt\xF4\xD8\xC6\x94 U\\\xDE\xC5\xD3\xD4...')
+#2 C:\xampp\htdocs\onlinetest\web\vendor\laravel\framework\src\Illuminate\Encryption\Encrypter.php(60): Illuminate\Encryption\Encrypter->padAndMcrypt('s:40:"84d3ea322...', '\xC2l\xCFt\xF4\xD8\xC6\x94 U\\\xDE\xC5\xD3\xD4...')
+#3 C:\xampp\htdocs\onlinetest\web\vendor\laravel\framework\src\Illuminate\Cookie\Middleware\EncryptCookies.php(108): Illuminate\Encryption\Encrypter->encrypt('84d3ea3228dfbae...')
+#4 C:\xampp\htdocs\onlinetest\web\vendor\laravel\framework\src\Illuminate\Cookie\Middleware\EncryptCookies.php(40): Illuminate\Cookie\Middleware\EncryptCookies->encrypt(Object(Illuminate\Http\Response))
+#5 C:\xampp\htdocs\onlinetest\web\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(125): Illuminate\Cookie\Middleware\EncryptCookies->handle(Object(Illuminate\Http\Request), Object(Closure))
+#6 C:\xampp\htdocs\onlinetest\web\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\CheckForMaintenanceMode.php(42): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}(Object(Illuminate\Http\Request))
+#7 C:\xampp\htdocs\onlinetest\web\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(125): Illuminate\Foundation\Http\Middleware\CheckForMaintenanceMode->handle(Object(Illuminate\Http\Request), Object(Closure))
+#8 [internal function]: Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}(Object(Illuminate\Http\Request))
+#9 C:\xampp\htdocs\onlinetest\web\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(100): call_user_func(Object(Closure), Object(Illuminate\Http\Request))
+#10 C:\xampp\htdocs\onlinetest\web\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php(115): Illuminate\Pipeline\Pipeline->then(Object(Closure))
+#11 C:\xampp\htdocs\onlinetest\web\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php(84): Illuminate\Foundation\Http\Kernel->sendRequestThroughRouter(Object(Illuminate\Http\Request))
+#12 C:\xampp\htdocs\onlinetest\web\public\index.php(54): Illuminate\Foundation\Http\Kernel->handle(Object(Illuminate\Http\Request))
+#13 {main}  
+[2017-03-08 11:13:32] local.ERROR: ErrorException: mcrypt_encrypt(): Key of size 51 not supported by this algorithm. Only keys of sizes 16, 24 or 32 supported in C:\xampp\htdocs\onlinetest\web\vendor\laravel\framework\src\Illuminate\Encryption\Encrypter.php:81
+Stack trace:
+#0 [internal function]: Illuminate\Foundation\Bootstrap\HandleExceptions->handleError(2, 'mcrypt_encrypt(...', 'C:\\xampp\\htdocs...', 81, Array)
+#1 C:\xampp\htdocs\onlinetest\web\vendor\laravel\framework\src\Illuminate\Encryption\Encrypter.php(81): mcrypt_encrypt('rijndael-128', 'base64:PPLr+zm+...', 's:40:"b21e95434...', 'cbc', '\xA4\xB5\x80\x16pG\xDBnh\x1C\xDE\xE7\xB9\xAA\x8A...')
+#2 C:\xampp\htdocs\onlinetest\web\vendor\laravel\framework\src\Illuminate\Encryption\Encrypter.php(60): Illuminate\Encryption\Encrypter->padAndMcrypt('s:40:"b21e95434...', '\xA4\xB5\x80\x16pG\xDBnh\x1C\xDE\xE7\xB9\xAA\x8A...')
+#3 C:\xampp\htdocs\onlinetest\web\vendor\laravel\framework\src\Illuminate\Cookie\Middleware\EncryptCookies.php(108): Illuminate\Encryption\Encrypter->encrypt('b21e95434636b9b...')
+#4 C:\xampp\htdocs\onlinetest\web\vendor\laravel\framework\src\Illuminate\Cookie\Middleware\EncryptCookies.php(40): Illuminate\Cookie\Middleware\EncryptCookies->encrypt(Object(Illuminate\Http\Response))
+#5 C:\xampp\htdocs\onlinetest\web\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(125): Illuminate\Cookie\Middleware\EncryptCookies->handle(Object(Illuminate\Http\Request), Object(Closure))
+#6 C:\xampp\htdocs\onlinetest\web\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\CheckForMaintenanceMode.php(42): Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}(Object(Illuminate\Http\Request))
+#7 C:\xampp\htdocs\onlinetest\web\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(125): Illuminate\Foundation\Http\Middleware\CheckForMaintenanceMode->handle(Object(Illuminate\Http\Request), Object(Closure))
+#8 [internal function]: Illuminate\Pipeline\Pipeline->Illuminate\Pipeline\{closure}(Object(Illuminate\Http\Request))
+#9 C:\xampp\htdocs\onlinetest\web\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(100): call_user_func(Object(Closure), Object(Illuminate\Http\Request))
+#10 C:\xampp\htdocs\onlinetest\web\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php(115): Illuminate\Pipeline\Pipeline->then(Object(Closure))
+#11 C:\xampp\htdocs\onlinetest\web\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php(84): Illuminate\Foundation\Http\Kernel->sendRequestThroughRouter(Object(Illuminate\Http\Request))
+#12 C:\xampp\htdocs\onlinetest\web\public\index.php(54): Illuminate\Foundation\Http\Kernel->handle(Object(Illuminate\Http\Request))
+#13 {main}  

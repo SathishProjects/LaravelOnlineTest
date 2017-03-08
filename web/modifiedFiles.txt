@@ -1,0 +1,29 @@
+# On branch master
+# Changes to be committed:
+#   (use "git reset HEAD <file>..." to unstage)
+#
+#	modified:   app/Http/Controllers/CollegeController.php
+#	modified:   app/Http/routes.php
+#	modified:   composer.json
+#	modified:   composer.lock
+#	new file:   resources/views/college/register.blade.php
+#
+# Changes not staged for commit:
+#   (use "git add <file>..." to update what will be committed)
+#   (use "git checkout -- <file>..." to discard changes in working directory)
+#
+#	modified:   app/Http/Controllers/CollegeController.php
+#	modified:   app/Http/routes.php
+#	modified:   config/app.php
+#	modified:   resources/views/college/register.blade.php
+#
+# Untracked files:
+#   (use "git add <file>..." to include in what will be committed)
+#
+#	app/Http/Requests/CollegeFormRequest.php
+#	app/University.php
+#	database/migrations/2015_06_14_153102_createInstitutionTable.php
+#	database/migrations/2015_06_14_153612_createInstitutionTypeTable.php
+#	database/migrations/2015_06_14_153913_createUniversityTable.php
+#	database/migrations/2015_06_14_154144_createCandidateTable.php
+#	modifiedFiles.txt
